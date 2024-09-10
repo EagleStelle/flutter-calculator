@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-
 import 'button_values.dart';
+import 'package:decimal/decimal.dart';
 
 class CalculatorScreen extends StatefulWidget {
   const CalculatorScreen({super.key});
@@ -13,6 +13,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   String input = ""; // . 0-9
   String operand = ""; // + - * /
   String input2 = ""; // . 0-9
+  String output = "";
 
   @override
   Widget build(BuildContext context) {
@@ -100,84 +101,114 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   }
 
   // Main Function
-  void onBtnTap(String value){
-    if(value==Btn.del){
+  void onBtnTap(String value) {
+    if (value == Btn.del) {
       deleteValue();
       return;
     }
-    if(value==Btn.clr){
+    if (value == Btn.clr) {
       clearValue();
       return;
     }
-    if(value==Btn.per){
+    if (value == Btn.per) {
       percentValue();
+      return;
+    }
+    if (value == Btn.calculate) {
+      calculateValue();
       return;
     }
     appendValue(value);
   }
 
   // Clear Value
-  void clearValue(){
+  void clearValue() {
     setState(() {
       input = "";
       operand = "";
       input2 = "";
     });
-
   }
+
   // Delete Value
-  void deleteValue(){
-    if(input2.isNotEmpty){
-      input2=input2.substring(0, input2.length - 1);
-    }
-    else if(operand.isNotEmpty){
+  void deleteValue() {
+    if (input2.isNotEmpty) {
+      input2 = input2.substring(0, input2.length - 1);
+    } else if (operand.isNotEmpty) {
       operand = "";
-    }
-    else if(input.isNotEmpty){
-      input=input.substring(0, input.length - 1);
+    } else if (input.isNotEmpty) {
+      input = input.substring(0, input.length - 1);
     }
 
     setState(() {});
   }
+
   // Percent Value
-  void percentValue(){
-    if(input.isNotEmpty&&operand.isNotEmpty&&input2.isNotEmpty){
+  void percentValue() {
+    setState(() {
+      if (input.isNotEmpty && operand.isNotEmpty && input2.isNotEmpty) {
+        input2 = (double.parse(input) * double.parse(input2) / 100).toStringAsPrecision(1);
+      } 
+      else if (input.isNotEmpty && operand.isEmpty) {
+        input = (double.parse(input) / 100).toStringAsPrecision(1);
+      }
+    });
+  }
 
-    }
+  // Calculate value
+  void calculateValue() {
+    if (input.isEmpty || input2.isEmpty || operand.isEmpty) return;  // Prevent empty input calculations
 
-    if(operand.isNotEmpty){
-      
+    Decimal number = Decimal.parse(input);
+    Decimal number2 = Decimal.parse(input2);
+    Decimal result = Decimal.zero;
+
+  // Perform the operation based on the operand
+  if (operand == Btn.add) {
+    result = Decimal.parse((number + number2).toString());
+  } 
+  else if (operand == Btn.subtract) {
+    result = Decimal.parse((number - number2).toString());
+  } 
+  else if (operand == Btn.multiply) {
+    result = Decimal.parse((number * number2).toString());
+  } 
+  else if (operand == Btn.divide) {
+    if (number2 != Decimal.zero) {
+      result = Decimal.parse((number / number2).toString());  // Prevent division by zero
+    } 
+    else {
+      result = Decimal.zero;
     }
   }
 
-  // Apend Value
-  void appendValue(String value){
-    if(value!=Btn.dot&&int.tryParse(value)==null){
-      // Operand
-      if(operand.isNotEmpty&&input2.isNotEmpty){
+    // Convert the result to a string and remove unnecessary trailing zeros
+    String finalResult = result.toString();
+    finalResult = finalResult.contains('.') ? finalResult.replaceAll(RegExp(r'0*$'), '').replaceAll(RegExp(r'\.$'), '') : finalResult;
 
+    // Update the input with the result and reset operand/input2
+    setState(() {
+      input = finalResult;  // The result becomes the new input1
+      operand = "";         // Reset operand
+      input2 = "";          // Reset input2
+    });
+  }
+
+  // Append Value
+  void appendValue(String value) {
+    if (value != Btn.dot && int.tryParse(value) == null) {
+      // Operand
+      if (operand.isEmpty) {
+        operand = value;
       }
-      operand = value;
-    }
-    // Initiate Input 1
-    else if(input.isEmpty || operand.isEmpty){
-      // When dot and dot pressed, remain "0."
-      if(value==Btn.dot && input.contains(Btn.dot)) return;
-      // When empty or dot, set "0."
-      if(value==Btn.dot && (input.isEmpty || input==Btn.dot)){
-        value = "0.";
-      }
-    input += value;
-    }
-    // Initate Input 2, will happen if operand
-    else if(input2.isEmpty || operand.isNotEmpty){
-      // When dot and dot pressed, remain "0."
-      if(value==Btn.dot && input2.contains(Btn.dot)) return;
-      // When empty or dot, set "0."
-      if(value==Btn.dot && (input2.isEmpty || input2==Btn.dot)){
-        value = "0.";
-      }
-    input2 += value;
+    } else if (operand.isEmpty) {  // Initiate Input 1
+      if (value == Btn.dot && input.contains(Btn.dot)) return;  // Prevent multiple dots
+      if (value == Btn.dot && (input.isEmpty || input == Btn.dot)) value = "0.";
+      input += value;
+    } else {  // Initiate Input 2
+      if (value == Btn.dot && input2.contains(Btn.dot)) return;  // Prevent multiple dots
+      if (value == Btn.dot && (input2.isEmpty || input2 == Btn.dot)) value = "0.";
+      input2 += value;
     }
 
     setState(() {});
