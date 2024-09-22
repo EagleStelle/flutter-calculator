@@ -163,24 +163,30 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     Decimal number2 = Decimal.parse(input2);
     Decimal result = Decimal.zero;
 
-  // Perform the operation based on the operand
-  if (operand == Btn.add) {
-    result = Decimal.parse((number + number2).toString());
-  } 
-  else if (operand == Btn.subtract) {
-    result = Decimal.parse((number - number2).toString());
-  } 
-  else if (operand == Btn.multiply) {
-    result = Decimal.parse((number * number2).toString());
-  } 
-  else if (operand == Btn.divide) {
-    if (number2 != Decimal.zero) {
-      result = Decimal.parse((number / number2).toString());  // Prevent division by zero
+    // Perform the operation based on the operand
+    if (operand == Btn.add) {
+      result = number + number2;
     } 
-    else {
-      result = Decimal.zero;
+    else if (operand == Btn.subtract) {
+      result = number - number2;
+    } 
+    else if (operand == Btn.multiply) {
+      result = number * number2;
+    } 
+    else if (operand == Btn.divide) {
+      if (number2 != Decimal.zero) {
+        // Convert to double for division
+        double num1 = double.parse(number.toString());
+        double num2 = double.parse(number2.toString());
+        double divResult = num1 / num2;
+
+        // Convert the result back to Decimal
+        result = Decimal.parse(divResult.toString());
+      } 
+      else {
+        result = Decimal.zero;  // Handle division by zero
+      }
     }
-  }
 
     // Convert the result to a string and remove unnecessary trailing zeros
     String finalResult = result.toString();
